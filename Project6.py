@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+from datetime import datetime
 
 # Apply custom CSS for green radio button selection dots
 st.markdown("""
@@ -11,14 +13,14 @@ st.markdown("""
 
         /* Ensure radio button text remains black */
         div[role="radiogroup"] > div > div[data-baseweb="radio"] label {
-            color: black !important; /* Keep text black */
-            background-color: transparent !important; /* No background on text */
+            color: black !important;
+            background-color: transparent !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # Display the logo at the top
-st.image("logo.png", width=400)  # Larger logo size
+st.image("logo.png", width=400)
 
 # Title of the app
 st.title("Leadership Readiness Tool")
@@ -126,6 +128,31 @@ if st.button("Submit"):
 
     # Display results in a pop-up style expander
     with st.expander("View Results", expanded=True):
-        st.image(image_path, width=150)  # Smaller traffic light image
+        st.image(image_path, width=150)
         st.markdown(f"### Final Readiness Score: {readiness_score:.2f}%")
         st.markdown(f"### Status: **{status}**")
+
+    # Save responses to Excel
+    save_data = {
+        "Timestamp": [datetime.now()],
+        "Summary": [summary],
+        **{key: [value] for key, value in responses.items()},
+        "Readiness Score": [readiness_score],
+        "Status": [status]
+    }
+    df = pd.DataFrame(save_data)
+
+    # File path
+    file_name = "Leadership_Readiness_Responses.xlsx"
+
+    try:
+        # Append to existing file if it exists
+        existing_df = pd.read_excel(file_name)
+        df = pd.concat([existing_df, df], ignore_index=True)
+    except FileNotFoundError:
+        pass  # File doesn't exist yet
+
+    # Save to Excel
+    df.to_excel(file_name, index=False)
+
+    st.success(f"Responses have been saved to {file_name}.")
